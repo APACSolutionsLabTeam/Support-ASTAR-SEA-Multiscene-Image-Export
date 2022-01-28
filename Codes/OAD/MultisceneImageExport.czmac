@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Script>
+  <Context>Zen26</Context>
+  <Version>1.0</Version>
+  <Language>Python</Language>
+  <Text>#######################################################
+## I M A G E   P R O C E S S I N G
+##
+## Macro name: MultisceneImageExport.czmac
+##
+## Author: ZSPANIYA@APAC Digital Solutions
+##
+## TAKES THE ACTIVE INPUT MULTISCENE IMAGE 
+## EXPORT EACH SCENE AS OMETIFF TO USER_DEFINED DESTINATION FOLDER
+##
+## Copyright (c) 2020 by Carl Zeiss Microscopy GmbH.
+## Permission is granted to use, modify and distribute this code,
+## as long as this copyright notice remains part of the code.
+#######################################################
+##
+## Import required libraries
+import os
+import re
+import shutil
+##
+## clear the macro editor console output
+Zen.Application.MacroEditor.ClearMessages()
+##
+## Load the active image on ZEN
+image = Zen.Application.Documents.ActiveDocument
+## Get the number of scenes in the image
+numScenes = int(image.Bounds.SizeS)
+print 'Number of Scenes  in the Image =',numScenes
+##
+## Set up the GUI dialog window
+GUIDialog = ZenWindow()
+GUIDialog.Initialize('Export Multiple Scenes of Input Image as OMETIFF')
+## Add components to GUI dialog
+GUIDialog.AddFolderBrowser('destfolderfromGUI','Destination folder', r'C:\Temp\MultisceneImageTesting','4','0')
+## Show the GUI window
+result = GUIDialog.Show()
+## Print message if the macro is cancelled
+if result.HasCanceled:
+    message = 'Macro was canceled by user.'
+    print(message)
+    raise SystemExit
+##
+## Else execute the macro
+else:
+    ## Get the values from GUI dialog and store them
+    ## Destination Folder chosen by the user
+    destFolder = str(result.GetValue('destfolderfromGUI'))
+    ## Define the OMETIFF Export Setting
+    processingSetting = Zen.Processing.Utilities.Settings.OmeTiffExportSetting()
+    print(processingSetting.XML)
+    ## Get basefilename to be used as prefix for exported images
+    base = os.path.basename(image.FileName)
+    baseFilename =  os.path.splitext(base)[0]
+    ## Final destination folder to export the OMETIFF images
+    destFolderScenes = destFolder+ '\\'+ baseFilename
+    ## Create new directory for the destination folder if it does not exist
+    if os.path.exists(destFolderScenes):
+        permitOverwrite = 'Do you want to overwrite the folder '+ destFolderScenes + '?'
+        Zen.Application.Pause(permitOverwrite)
+        print("Destination Folder for Image Scenes Exists")
+        shutil.rmtree(destFolderScenes)
+        os.mkdir(destFolderScenes)
+    else:
+        os.mkdir(destFolderScenes)
+        print("Destination Folder for Image Scenes Created")
+    ## Loop across all the scenes in the image
+    for j in range(1, numScenes+1):
+        sceneImage = image.CreateSubImage('S(' + str(j) + ')') 
+        Zen.Processing.Utilities.ExportOmeTiff(sceneImage, processingSetting, 'Scene_'+str(j), destFolderScenes)
+    dispText = 'Finished exporting the scenes of the image as OMETIFF to ' + destFolderScenes
+    Zen.Application.Pause(dispText)
+##
+#######################################################
+
+
+
+
+</Text>
+  <Author></Author>
+  <Description></Description>
+  <Keywords></Keywords>
+  <Row>56</Row>
+  <Column>73</Column>
+</Script>
